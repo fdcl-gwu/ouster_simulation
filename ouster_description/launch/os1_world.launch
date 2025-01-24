@@ -7,10 +7,11 @@
   <arg name="debug" default="false"/>
   <arg name="verbose" default="true"/>
   <arg name="world_name" default="$(find ouster_description)/worlds/os-1-64.world"/>
-  <arg name="model" default="$(find ouster_description)/urdf/example.urdf.xacro"/>
+  <arg name="sensor_model" default="$(find ouster_description)/urdf/example.urdf.xacro"/>
+  <arg name="ship_model" default="$(find ouster_description)/urdf/ship.urdf"/>
 
   <!-- Start gazebo and load the world -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch" >
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="paused" value="$(arg paused)"/>
     <arg name="use_sim_time" value="$(arg use_sim_time)"/>
     <arg name="gui" value="$(arg gui)"/>
@@ -20,9 +21,15 @@
     <arg name="world_name" value="$(arg world_name)"/>
   </include>
 
-  <!-- Spawn the example robot -->
-  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(arg model)'" />
+  <!-- Spawn the sensor robot -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(arg sensor_model)'" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_sensor" output="screen" args="-urdf -param robot_description -model example"/>
+
+  <!-- Spawn the ship model -->
+  <param name="ship_description" command="$(find xacro)/xacro --inorder '$(arg ship_model)'" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_ship" output="screen" args="-urdf -param ship_description -model ship -x 5 -y 0 -z 2.5 -Y -1.5707"/>
+
+  <!-- Robot State Publisher for sensor -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
@@ -30,6 +37,5 @@
   <!-- RViz -->
   <arg name="rviz" default="true"/>
   <node if="$(arg rviz)" pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" args="-d $(find ouster_description)/rviz/example.rviz" />
- 
 
 </launch>
