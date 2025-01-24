@@ -5,8 +5,8 @@
   <arg name="gui" default="true"/>
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
-  <arg name="verbose" default="false"/>
-  <arg name="world_name" default="$(find ouster_description)/worlds/example.world"/>
+  <arg name="verbose" default="true"/>
+  <arg name="world_name" default="$(find ouster_description)/worlds/os-1-64.world"/>
   <arg name="model" default="$(find ouster_description)/urdf/example.urdf.xacro"/>
 
   <!-- Start gazebo and load the world -->

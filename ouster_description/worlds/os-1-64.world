@@ -41,16 +41,16 @@
         <!-- The visual is mostly a copy of the collision -->
         <visual name="base_visual">
           <geometry>
-            <!--
+            
             <mesh>     
               <uri>package://ouster_description/meshes/os1_64.dae</uri>
             </mesh>
-            -->
+           
             
-            <cylinder>
+            <!-- <cylinder>
               <radius>0.0425</radius>
               <length>0.073</length>
-            </cylinder>
+            </cylinder> -->
           
           </geometry>
         </visual>

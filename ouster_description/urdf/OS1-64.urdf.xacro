@@ -25,8 +25,7 @@
       <visual name="base_visual">
          <origin xyz="0 0 0.0" rpy="0 0 1.5707" />
          <geometry>
-	         <mesh filename="package://ouster_description/meshes/os1_64.dae" /> 
-           <!-- <cylinder length="0.073" radius="0.04" /> -->
+	         <mesh filename="package://ouster_description/meshes/os1_64.dae"/>
          </geometry>
       </visual>
     </link>
@@ -88,20 +87,20 @@
     </gazebo>
 
     <!-- IMU -->
-  <gazebo>
-    <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
-      <robotNamespace>/</robotNamespace>
-      <updateRate>100.0</updateRate> 
-      <bodyName>${imu_link}</bodyName>
-      <topicName>${topic_imu}</topicName>
-      <accelDrift>0.005 0.005 0.005</accelDrift>
-      <accelGaussianNoise>0.005 0.005 0.005</accelGaussianNoise>
-      <rateDrift>0.005 0.005 0.005 </rateDrift>
-      <rateGaussianNoise>0.005 0.005 0.005 </rateGaussianNoise>
-      <headingDrift>0.005</headingDrift>
-      <headingGaussianNoise>0.005</headingGaussianNoise>
-    </plugin>
-  </gazebo>
+    <gazebo>
+      <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
+        <robotNamespace>/</robotNamespace>
+        <updateRate>100.0</updateRate> 
+        <bodyName>${imu_link}</bodyName>
+        <topicName>${topic_imu}</topicName>
+        <accelDrift>0.005 0.005 0.005</accelDrift>
+        <accelGaussianNoise>0.005 0.005 0.005</accelGaussianNoise>
+        <rateDrift>0.005 0.005 0.005 </rateDrift>
+        <rateGaussianNoise>0.005 0.005 0.005 </rateGaussianNoise>
+        <headingDrift>0.005</headingDrift>
+        <headingGaussianNoise>0.005</headingGaussianNoise>
+      </plugin>
+    </gazebo>
 
   </xacro:macro>
 </robot>
