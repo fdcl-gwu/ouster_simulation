@@ -1,20 +1,51 @@
-[![Docker Stars](https://img.shields.io/docker/stars/wilselby/ouster_example.svg)](https://hub.docker.com/r/wilselby/ouster_example/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/wilselby/ouster_example.svg)](https://hub.docker.com/r/wilselby/ouster_example/)
-[![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/wilselby/ouster_example/blob/master/LICENSE)
-[![Build Status](https://travis-ci.org/wilselby/ouster_example.svg?branch=master)](https://travis-ci.org/wilselby/ouster_example)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwilselby%2Fouster_example.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwilselby%2Fouster_example?ref=badge_shield)
+# Simulating Ouster LiDAR in Gazebo
+## Ouster Example
 
-# OS-1 Example Code
-Sample code for connecting to and configuring the OS-1, reading and visualizing
-data, and interfacing with ROS.
+This repository is an adaptation of the [ouster_example](https://github.com/wilselby/ouster_example) repository. For IMU simulation, requires cloning the hector_gazebo_plugins package (see below). 
+- NOTE: For code simplicity, several unnecessary directories from the original fork were removed. Refer to old commits for those details.
 
-See the `README.md` in each subdirectory for details.
+### Prerequisites
 
-## Contents
-* [ouster_client/](ouster_client/README.md) contains an example C++ client for the OS-1 sensor
-* [ouster_viz/](ouster_viz/README.md) contains a visualizer for the OS-1 sensor
-* [ouster_ros/](ouster_ros/README.md) contains example ROS nodes for publishing point cloud messages
+Make sure you have the following software installed:
 
-## Sample Data
-* Sample sensor output usable with the provided ROS code is available
-  [here](https://data.ouster.io/sample-data-1.10)
+- ROS Noetic
+- Gazebo 11.14.0
+
+### Installation
+
+1. Create a catkin workspace:
+
+    ```bash
+    mkdir -p catkin_ws/src
+    cd catkin_ws/src
+    ```
+
+2. Clone the required repositories:
+
+    ```bash
+    git clone https://github.com/fdcl-gwu/ouster_simulation.git
+    git clone https://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git hector_gazebo_plugins
+    ```
+
+3. Build the workspace:
+
+    ```bash
+    cd ..
+    catkin build
+    ```
+
+### Usage
+
+1. Source the workspace:
+
+    ```bash
+    source devel/setup.bash
+    ```
+
+2. Launch the Ouster simulation:
+
+    ```bash
+    roslaunch ouster_description os1_world.launch -v
+    ```
+
+### Modification for OS0-32 rev0 specifications:
