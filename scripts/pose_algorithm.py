@@ -4,6 +4,8 @@ from geometry_msgs.msg import Pose, Twist
 import numpy as np
 import os
 import pyvista as pv
+from scipy.linalg import expm
+
 
 np.random.seed(42)
 
@@ -73,7 +75,7 @@ def create_C_F():
 
     return C, F
     
-def plot_points(C, F, CF):
+def plot_points(C, F, CF, R_list):
 
     # Path to the STL file
     stl_path = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/ouster_description/meshes/rotated_ship.stl"
@@ -94,6 +96,17 @@ def plot_points(C, F, CF):
         points = np.array([C[i], F[i//2]])
         plotter.add_lines(points, color='purple', width=2)
 
+    # # Draw a coordiante axes for this R at location C in the plotter
+    # R = R_list[5]  # Use the first rotation matrix
+    # origin = C[5]  # Assume the first C point as the origin for the axes
+
+    # # Define axes scaled and transformed by R
+    # axes_length = 1.0
+    # # Add the axes to the plot
+    # plotter.add_arrows(origin, R[:, 0] * axes_length, color='red')    # X-axis
+    # plotter.add_arrows(origin, R[:, 1] * axes_length, color='green')  # Y-axis
+    # plotter.add_arrows(origin, R[:, 2] * axes_length, color='blue')   # Z-axis
+
     # Set labels and background
     plotter.set_background('white')
     plotter.add_axes(labels_off=False)
@@ -110,14 +123,25 @@ def hat_map(v):
         [-v[1], v[0], 0]
     ])
 
+def to_quaternion(R):
+    """Convert a rotation matrix to a quaternion."""
+    q = np.empty(4)
+    q[0] = np.sqrt(1 + R[0,0] + R[1,1] + R[2,2]) / 2
+    q[1] = (R[2,1] - R[1,2]) / (4*q[0])
+    q[2] = (R[0,2] - R[2,0]) / (4*q[0])
+    q[3] = (R[1,0] - R[0,1]) / (4*q[0])
+    return q
+
 def get_R(C,F,CF):
-    # First use CF to compute R'. Then use R' to compute R.
     R_prime = np.eye(3)
     r1_prime = np.zeros((3,1))
     r2_prime = np.zeros((3,1))
     r3_prime = np.zeros((3,1))
-    e_3 = np.array([0,0,1]) #only used to get 
+    e_3 = np.array([0,0,1]) #only used to get r1_prime given LiDAR coordinate system
+    psi = [-np.pi/6, np.pi/6]
+    R_for_C = [] # for each C, contains the corresponding R
 
+    # First use CF to compute R'. Then use R' to compute R.
     for i in range(len(CF)):
         r1_prime = CF[i]/np.linalg.norm(CF[i])
         r2_prime = np.cross(e_3, r1_prime)/np.linalg.norm(np.cross(e_3, r1_prime))
@@ -125,10 +149,18 @@ def get_R(C,F,CF):
         R_prime = np.column_stack((r1_prime, r2_prime, r3_prime))
 
         # Now compute R
-        psi = [-np.pi/6, np.pi/6] # range of psi to be selected randomly
+        # psi = np.random.uniform(psi[0],psi[1]) # range of psi to be selected randomly
+        psi = 0
         r1_prime_hat = hat_map(r1_prime) #TODO: not using e3_hat?
-        
-    # TODO: lot the matrix in the plotter
+        # exp_matrix = expm(psi*r1_prime_hat)
+        exp_matrix = np.eye(3) + np.sin(psi) * r1_prime_hat + (1 - np.cos(psi)) * np.dot(r1_prime_hat, r1_prime_hat) #explcitly use Rodrigues' formula
+        R = np.dot(R_prime, exp_matrix)
+
+        # append R to a list
+        R_for_C.append(R)
+
+    return R_for_C
+    # TODO: plot the matrix in the plotter
 
 
 def set_model_state():
@@ -138,8 +170,47 @@ def set_model_state():
 
     print(f"Generated {len(C)} pairs of C and F points.")
     
-    plot_points(C, F, CF)
-    # get_R(C,F,CF)
+    R_list = get_R(C,F,CF)
+    # plot_points(C, F, CF, R_list)
+
+    # Begin the publishing to the simulation:
+    print("Publishing model states to Gazebo...")
+
+    # Create a publisher to the /gazebo/set_model_state topic
+    pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=1)
+    rospy.init_node('set_model_state_node', anonymous=True)
+
+    rospy.sleep(1)  # Allow some time for publisher to register
+
+    # Define the model state
+    model_state = ModelState()
+    model_state.model_name = "example"  # The name of the model from /gazebo/model_states
+    model_state.reference_frame = "world"
+
+    for i in range(1):
+        # Set the desired position
+        model_state.pose.position.x = C[i][0]
+        model_state.pose.position.y = C[i][1]
+        model_state.pose.position.z = C[i][2]
+
+        # convert R to quaternion
+        q = to_quaternion(R_list[i])
+
+        # Set the desired orientation (quaternion)
+        model_state.pose.orientation.x = q[1]
+        model_state.pose.orientation.y = q[2]
+        model_state.pose.orientation.z = q[3]
+        model_state.pose.orientation.w = q[0]
+
+        rospy.loginfo("Publishing model state to Gazebo...")
+
+        # Publish the message repeatedly to ensure it is received
+        rate = rospy.Rate(10)  # 10 Hz
+        pub.publish(model_state)
+        rate.sleep() # sleep for 0.1 seconds
+        rospy.loginfo("Model state set successfully.")
+
+    rospy.loginfo("Model state set successfully.")
 
 if __name__ == "__main__":
     try:
