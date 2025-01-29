@@ -69,8 +69,6 @@ Make sure you have the following software installed:
 
 - Comments 01.27:
     - sensor is mounted upright for ease of viewing.
-    - ```<origin xyz="5 0 3" rpy="0 0 0" />```: base_link is transformed relative to base_footprint
-    - scripts/pose_reader.py saves synchronized clouds with poses from ROS topic /gazebo/model_states
 
 ### TODOs:
 - [ ] Q: should lidar scans be in frame of sensor, or in frame of YP? 

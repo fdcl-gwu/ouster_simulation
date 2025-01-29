@@ -13,7 +13,10 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
     rospy.loginfo(f"Created directory: {save_dir}")
 
+most_recent_pose = None
+
 def synchronized_callback(model_msg, cloud_msg):
+    global most_recent_pose
     try:
         # Find the index of 'example'
         index = model_msg.name.index('example')
@@ -32,7 +35,11 @@ def synchronized_callback(model_msg, cloud_msg):
             'qw': orientation.w
         }
 
-        rospy.loginfo(f"Pose Synchronized: {pose_data}")
+        if most_recent_pose == pose_data:
+            rospy.loginfo("Pose already synchronized.")
+            return
+        
+        # rospy.loginfo(f"Pose Synchronized: {pose_data}")
 
         # Convert ROS PointCloud2 message to list of points
         cloud_points = list(pc2.read_points(cloud_msg, field_names=("x", "y", "z"), skip_nans=True))
@@ -54,7 +61,8 @@ def synchronized_callback(model_msg, cloud_msg):
             f.write(f"Pose: {pose_data}\n")
 
         rospy.loginfo(f"Point cloud saved to {filename_ply}, pose saved to {filename_pose}")
-
+        most_recent_pose = pose_data
+        
     except ValueError:
         rospy.logwarn("example not found in model states.")
 
@@ -66,7 +74,7 @@ if __name__ == "__main__":
     point_cloud_sub = message_filters.Subscriber("/os1_cloud_node/points", PointCloud2)
 
     # Approximate Time Synchronization with allow_headerless=True
-    ts = message_filters.ApproximateTimeSynchronizer([model_states_sub, point_cloud_sub], queue_size=1, slop=0.1, allow_headerless=True)
+    ts = message_filters.ApproximateTimeSynchronizer([model_states_sub, point_cloud_sub], queue_size=10, slop=0.01, allow_headerless=True)
     ts.registerCallback(synchronized_callback)
 
     rospy.loginfo("Synchronizing and recording pose and point clouds in 'gazebo_pc_record/' directory...")

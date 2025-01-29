@@ -7,3 +7,4 @@ install/
 *.bag
 doc/
 data/
+gazebo_pc_record/
