@@ -1,3 +1,5 @@
+# If pose_writer hangs, make sure you're not in a conda environment. Then source setup.bash again.
+
 import rospy
 from gazebo_msgs.msg import ModelState
 from geometry_msgs.msg import Pose, Twist
@@ -15,15 +17,15 @@ def set_model_state():
     model_state.reference_frame = "world"
 
     # Set the desired position
-    model_state.pose.position.x = 0.0
-    model_state.pose.position.y = 0.0
-    model_state.pose.position.z = 0.0
+    model_state.pose.position.x = 1.86964867983716
+    model_state.pose.position.y = -3.028062835607197
+    model_state.pose.position.z = 2.7451070230083827
 
     # Set the desired orientation (quaternion)
-    model_state.pose.orientation.x = 0.0
-    model_state.pose.orientation.y = 0.0
-    model_state.pose.orientation.z = 0.0
-    model_state.pose.orientation.w = 1.0
+    model_state.pose.orientation.x = -0.1158743065148767
+    model_state.pose.orientation.y = 0.2547179622488181
+    model_state.pose.orientation.z = 0.3975362205400908
+    model_state.pose.orientation.w = 0.8738746238198054
 
     rospy.loginfo("Publishing model state to Gazebo...")
 

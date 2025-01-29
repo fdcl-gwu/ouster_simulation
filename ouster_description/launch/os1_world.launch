@@ -27,7 +27,7 @@
 
   <!-- Spawn the ship model -->
   <param name="ship_description" command="$(find xacro)/xacro --inorder '$(arg ship_model)'" />
-  <node pkg="gazebo_ros" type="spawn_model" name="spawn_ship" output="screen" args="-urdf -param ship_description -model ship -x 5 -y 0 -z 2.5 -Y -1.5707"/>
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_ship" output="screen" args="-urdf -param ship_description -model ship -x 0 -y 0 -z -0.5 -Y -1.5707"/>
 
   <!-- Robot State Publisher for sensor -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">

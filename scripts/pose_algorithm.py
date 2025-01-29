@@ -3,7 +3,8 @@ from gazebo_msgs.msg import ModelState
 from geometry_msgs.msg import Pose, Twist
 import numpy as np
 import os
-import pyvista as pv
+# import pyvista as pv
+from scipy.spatial.transform import Rotation
 from scipy.linalg import expm
 
 
@@ -75,46 +76,6 @@ def create_C_F():
 
     return C, F
     
-def plot_points(C, F, CF, R_list):
-
-    # Path to the STL file
-    stl_path = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/ouster_description/meshes/rotated_ship.stl"
-    mesh = pv.read(stl_path)
-    # Plot the points C blue and F red using pyvista
-    plotter = pv.Plotter()
-    plotter.add_mesh(mesh, color='lightblue', opacity=0.5)
-
-    # add C, F points to the plot
-    for i in range(num_samples_F):
-        plotter.add_points(C[2*i], color='blue', point_size=3)
-        plotter.add_points(C[2*i+1], color='blue', point_size=3)
-        plotter.add_points(F[i], color='red', point_size=3)
-
-    # select first num_lines pairs of points and draw lines between them
-    num_lines = 10
-    for i in range(num_lines):
-        points = np.array([C[i], F[i//2]])
-        plotter.add_lines(points, color='purple', width=2)
-
-    # # Draw a coordiante axes for this R at location C in the plotter
-    # R = R_list[5]  # Use the first rotation matrix
-    # origin = C[5]  # Assume the first C point as the origin for the axes
-
-    # # Define axes scaled and transformed by R
-    # axes_length = 1.0
-    # # Add the axes to the plot
-    # plotter.add_arrows(origin, R[:, 0] * axes_length, color='red')    # X-axis
-    # plotter.add_arrows(origin, R[:, 1] * axes_length, color='green')  # Y-axis
-    # plotter.add_arrows(origin, R[:, 2] * axes_length, color='blue')   # Z-axis
-
-    # Set labels and background
-    plotter.set_background('white')
-    plotter.add_axes(labels_off=False)
-    plotter.show_grid()
-
-    # Show the plot
-    plotter.show(title='3D Visualization of PLY Point Cloud')
-
 def hat_map(v):
     """Compute the hat map (skew-symmetric matrix) of a 3D vector."""
     return np.array([
@@ -131,6 +92,10 @@ def to_quaternion(R):
     q[2] = (R[0,2] - R[2,0]) / (4*q[0])
     q[3] = (R[1,0] - R[0,1]) / (4*q[0])
     return q
+
+def to_rotation_matrix(quaternion):
+    rotation = Rotation.from_quat(quaternion)
+    return rotation.as_matrix()
 
 def get_R(C,F,CF):
     R_prime = np.eye(3)
@@ -162,17 +127,54 @@ def get_R(C,F,CF):
     return R_for_C
     # TODO: plot the matrix in the plotter
 
+# def plot_points(C, F, CF, R_list):
 
-def set_model_state():
-    # Create a publisher to the /gazebo/set_model_state topic, sending over computed poses
-    C, F = create_C_F()
-    CF = generate_CF_vectors(C,F)
+#     # Path to the STL file
+#     stl_path = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/ouster_description/meshes/rotated_ship.stl"
+#     mesh = pv.read(stl_path)
+#     # Plot the points C blue and F red using pyvista
+#     plotter = pv.Plotter()
+#     plotter.add_mesh(mesh, color='lightblue', opacity=0.5)
 
-    print(f"Generated {len(C)} pairs of C and F points.")
+#     # add C, F points to the plot
+#     for i in range(num_samples_F):
+#         plotter.add_points(C[2*i], color='blue', point_size=3)
+#         plotter.add_points(C[2*i+1], color='blue', point_size=3)
+#         plotter.add_points(F[i], color='red', point_size=3)
+
+#     # select first num_lines pairs of points and draw lines between them
+#     num_lines = 10
+#     for i in range(num_lines):
+#         points = np.array([C[i], F[i//2]])
+#         plotter.add_lines(points, color='purple', width=2)
+
+#     # Draw a coordiante axes for this R at location C in the plotter
+#     R = R_list[0]  # Use the first rotation matrix
+#     origin = C[0]  # Assume the first C point as the origin for the axes
     
-    R_list = get_R(C,F,CF)
-    # plot_points(C, F, CF, R_list)
+#     # DEBUGGING: print C[0], F[0], CF[0], R_list[0]
+#     print("C[0]:", C[0])
+#     print("F[0]:", F[0])
+#     print("CF[0]:", CF[0])
+#     print("R[0]:", R_list[0])
 
+#     # Define axes scaled and transformed by R
+#     axes_length = 1.0
+#     # Add the axes to the plot
+#     plotter.add_arrows(origin, R[:, 0] * axes_length, color='red')    # X-axis
+#     plotter.add_arrows(origin, R[:, 1] * axes_length, color='green')  # Y-axis
+#     plotter.add_arrows(origin, R[:, 2] * axes_length, color='blue')   # Z-axis
+
+#     # Set labels and background
+#     plotter.set_background('white')
+#     plotter.add_axes(labels_off=False)
+#     plotter.show_grid()
+
+#     # Show the plot
+#     plotter.show(title='3D Visualization of PLY Point Cloud')
+
+
+def set_model_state(C, R_list):
     # Begin the publishing to the simulation:
     print("Publishing model states to Gazebo...")
 
@@ -187,7 +189,7 @@ def set_model_state():
     model_state.model_name = "example"  # The name of the model from /gazebo/model_states
     model_state.reference_frame = "world"
 
-    for i in range(1):
+    for i in range(10):
         # Set the desired position
         model_state.pose.position.x = C[i][0]
         model_state.pose.position.y = C[i][1]
@@ -210,10 +212,42 @@ def set_model_state():
         rate.sleep() # sleep for 0.1 seconds
         rospy.loginfo("Model state set successfully.")
 
+    # Extract the position and quaternion from model_state
+    position = [
+        model_state.pose.position.x,
+        model_state.pose.position.y,
+        model_state.pose.position.z
+    ]
+    quaternion = [
+        model_state.pose.orientation.x,
+        model_state.pose.orientation.y,
+        model_state.pose.orientation.z,
+        model_state.pose.orientation.w
+    ]
+
+    # Convert quaternion to rotation matrix
+    rotation_matrix = to_rotation_matrix(quaternion)
+
+    # Construct the transformation matrix
+    transformation_matrix = np.eye(4)
+    transformation_matrix[:3, :3] = rotation_matrix
+    transformation_matrix[:3, 3] = position
+
+    print("Transformation Matrix:")
+    print(transformation_matrix)
+
     rospy.loginfo("Model state set successfully.")
 
 if __name__ == "__main__":
     try:
-        set_model_state()
+        # Create a publisher to the /gazebo/set_model_state topic, sending over computed poses
+        C, F = create_C_F()
+        CF = generate_CF_vectors(C,F)
+
+        print(f"Generated {len(C)} pairs of C and F points.")
+        
+        R_list = get_R(C,F,CF)
+        # plot_points(C, F, CF, R_list)
+        set_model_state(C, R_list)
     except rospy.ROSInterruptException:
         pass

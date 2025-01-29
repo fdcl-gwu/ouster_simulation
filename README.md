@@ -73,8 +73,16 @@ Make sure you have the following software installed:
     - scripts/pose_reader.py saves synchronized clouds with poses from ROS topic /gazebo/model_states
 
 ### TODOs:
-[ ]: Q: should lidar scans be in frame of sensor, or in frame of YP? 
+- [ ] Q: should lidar scans be in frame of sensor, or in frame of YP? 
     - A: SIM: sensor frame (i.e. cloud frame origin is where sensor is). If that's wrong, can later just compute 
         $$ T^{\text{yp}}_{\text{cloud}} = T^{\text{yp}}_{\text{sensor}} T^{\text{sensor}}_{\text{cloud}} $$
-[ ]: publish to set_model_state from python file
-[ ]: generate poses to publish (maneesh paper)
+- [ ] publish to set_model_state from python file
+- [ ] generate poses to publish (maneesh paper)
+- [ ] IF F_y > C_y (i.e. sensor facing upwards), don't use that pose
+- [ ] IF C_y >> F_y (i.e. sensor facing downwards too much), don't use that pose
+    - choose different F with higher y
+
+### Comments
+#### pose_algorithm.py
+- If trying to plot (not publishing), use the conda base environment (requires uncommenting the block in the `~/.bashrc` file).
+- If trying to write to a topic (not plotting), which uses `rospy`, it requires Python from `/usr/bin/python`. This does not have `pyvista` installed.
