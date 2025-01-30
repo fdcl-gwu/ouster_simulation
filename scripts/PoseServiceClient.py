@@ -56,7 +56,7 @@ def set_model_state(C, R_list):
 if __name__ == "__main__":
     try:
         # Generate scatter data
-        C, F, CF, R_list = PoseScatterGenerator.generate_scatter_data()
+        C, F, CF, F_updated, R_list = PoseScatterGenerator.generate_scatter_data()
         
         # Publish poses and request corresponding point clouds
         set_model_state(C, R_list)

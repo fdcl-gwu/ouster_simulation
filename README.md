@@ -67,18 +67,19 @@ Make sure you have the following software installed:
 - `vfov_min`: -.785
 - `vfov_max`: .785
 
-- Comments 01.27:
+- Comments as of 01.27:
     - sensor is mounted upright for ease of viewing.
+    - YP origin is at 0,0,-0.5 in sensor frame. This prevents scan from seeing "through" ship model.
 
 ### TODOs:
 - [ ] Q: should lidar scans be in frame of sensor, or in frame of YP? 
     - A: SIM: sensor frame (i.e. cloud frame origin is where sensor is). If that's wrong, can later just compute 
         $$ T^{\text{yp}}_{\text{cloud}} = T^{\text{yp}}_{\text{sensor}} T^{\text{sensor}}_{\text{cloud}} $$
-- [ ] publish to set_model_state from python file
-- [ ] generate poses to publish (maneesh paper)
-- [ ] IF F_y > C_y (i.e. sensor facing upwards), don't use that pose
-- [ ] IF C_y >> F_y (i.e. sensor facing downwards too much), don't use that pose
-    - choose different F with higher y
+- [x] publish to set_model_state from python file
+- [x] generate poses to publish (maneesh paper)
+- [x] modify distribution to exclude "extreme" lidar angles
+- [ ] get ship bounding boxes for each scan in sensor frame
+- [ ] get psi to roll correctly
 
 ### Comments
 #### pose_algorithm.py
