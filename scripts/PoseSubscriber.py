@@ -36,6 +36,7 @@ def synchronized_callback(model_msg, cloud_msg):
         }
 
         if most_recent_pose == pose_data:
+            # prints 9 times per second (since cloud is at 10hz)
             rospy.loginfo("Pose already synchronized.")
             return
         
@@ -74,7 +75,7 @@ if __name__ == "__main__":
     point_cloud_sub = message_filters.Subscriber("/os1_cloud_node/points", PointCloud2)
 
     # Approximate Time Synchronization with allow_headerless=True
-    ts = message_filters.ApproximateTimeSynchronizer([model_states_sub, point_cloud_sub], queue_size=10, slop=0.01, allow_headerless=True)
+    ts = message_filters.ApproximateTimeSynchronizer([model_states_sub, point_cloud_sub], queue_size=10, slop=0.1, allow_headerless=True)
     ts.registerCallback(synchronized_callback)
 
     rospy.loginfo("Synchronizing and recording pose and point clouds in 'gazebo_pc_record/' directory...")

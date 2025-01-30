@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation
 from scipy.linalg import expm
 
 
-np.random.seed(42)
+np.random.seed(41)
 
 num_samples_C = 1500
 num_samples_F = 750
@@ -16,7 +16,7 @@ r_C = [0,12]
 
 theta_B_F = [-np.pi/4, np.pi/4,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [2.5,6]
+r_F = [4,8]
 
 # # Ranges for Cartesian (not used)
 # F_range_x = [1, 10]
@@ -146,8 +146,8 @@ def plot_points(C, F, CF, R_list):
         plotter.add_lines(points, color='purple', width=2)
 
     # Draw a coordiante axes for this R at location C in the plotter
-    R = R_list[0]  # Use the first rotation matrix
-    origin = C[0]  # Assume the first C point as the origin for the axes
+    R = R_list[11]  # Use the first rotation matrix
+    origin = C[11]  # Assume the first C point as the origin for the axes
 
     # Define axes scaled and transformed by R
     axes_length = 1.0
