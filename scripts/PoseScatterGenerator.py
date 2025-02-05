@@ -4,15 +4,15 @@ from scipy.spatial.transform import Rotation
 from scipy.linalg import expm
 
 
-np.random.seed(41)
+np.random.seed(42)
 
-num_samples_C = 2000
-num_samples_F = 2000
+num_samples_C = 10000
+num_samples_F = 10000
 
 # Constants
 theta_B_C = [np.pi/4, 7*np.pi/4,]
 phi_B_C = [0, np.pi/3.5]
-r_C = [0,15]
+r_C = [0,10] #TODO: change to 12 for next colelction
 
 theta_B_F = [-np.pi/4, np.pi/4,]
 phi_B_F = [-np.pi/8, np.pi/3]
@@ -40,11 +40,12 @@ def generate_CF_vectors(C, F):
     F_updated = []  # Track selected F points
 
     for i in range(len(C)):
-        F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 3, F[:, 2] <= C[i][2] + 1)]
+        F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 1.5, F[:, 2] <= C[i][2] + 1.5)]
         if len(F_filtered) == 0:
-            print(f"Warning: No valid F found for C[{i}], skipping.")
+            print(f"Warning: No valid F found for C[{i}], using closest instead.")
             # Manually specify F points for now using the smallest absolute difference in z
             F_selected = F[np.argmin(np.abs(F[:, 2] - C[i][2]))]
+            print(np.min(np.abs(F[:, 2] - C[i][2])))
             F_updated.append(F_selected)  # Track F_selected for plotting
             CF.append(F_selected - C[i])
             continue

@@ -69,7 +69,7 @@ Make sure you have the following software installed:
 
 - Comments as of 01.27:
     - sensor is mounted upright for ease of viewing.
-    - YP origin is at 0,0,-0.5 in sensor frame. This prevents scan from seeing "through" ship model.
+    - IMPORTANT: YP origin is at 0,0,-0.5 in sensor frame. This prevents scan from seeing "through" ship model.
 
 ### TODOs:
 - [ ] Q: should lidar scans be in frame of sensor, or in frame of YP? 
@@ -78,10 +78,31 @@ Make sure you have the following software installed:
 - [x] publish to set_model_state from python file
 - [x] generate poses to publish (maneesh paper)
 - [x] modify distribution to exclude "extreme" lidar angles
-- [ ] get ship bounding boxes for each scan in sensor frame
+- [x] get ship regions as coordiantes  in the YP.stl frame\
+- [x] algorithm to get class labels for each scan based on #points in each region in scan
+- [x] get ship bounding boxes for each scan in sensor frame
 - [ ] get psi to roll correctly
 
 ### Comments
-#### pose_algorithm.py
+#### PoseScatterGenerator.py
 - If trying to plot (not publishing), use the conda base environment (requires uncommenting the block in the `~/.bashrc` file).
 - If trying to write to a topic (not plotting), which uses `rospy`, it requires Python from `/usr/bin/python`. This does not have `pyvista` installed.
+
+### Steps to sample
+1. #### PoseScatterGenerator.py (in conda base env)
+    - change the num_samples_C, and num_samples_F to the number of samples you want (must match)
+    - change second value of r_C to be the maximum distance from the flight deck you want the sensor to go out to.
+    - change the range of +- 1.5 to be the vertical pitch range allowed for the sensor
+    ```        
+    F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 1.5, F[:, 2] <= C[i][2] + 1.5)]
+    
+    where first term (i.e. F[:, 2] >= C[i][2] - 1.5,) corresponds to downward pitch amount, and second term (i.e. F[:, 2] <= C[i][2] + 1.5) corresponds to upward pitch.
+    ```
+    - To check the settings before sampling, you can plot the points by runing ```$ python PoseScatterGenerator.py``` which also plotsa some generated CF vectors and poses.
+    
+2. Run ```$ roslaunch ouster_description os1_world.launch -v``` to start the gazebo simulation (make sure to source the workspace).
+    - NOTE: this won't work if the conda base env is active... must be using the /usr/bin/python for this to work.
+3. #### PoseServiceServer.py
+    - Start the Server
+4. #### PoseServiceClient.py
+    - Begin the sampling. The first pose and scan will always start from the same place, regardless of where the sensor is in the simulation (i.e if you manually moved teh sensor beforehand). HOWEVER, if the ship model was moved, you need to restart the simulation since otherwise the ship and sensor origins wont' coincide.
