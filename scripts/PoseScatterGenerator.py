@@ -6,17 +6,19 @@ from scipy.linalg import expm
 
 np.random.seed(42)
 
-num_samples_C = 10000
-num_samples_F = 10000
+num_samples_C = 1000
+num_samples_F = 1000
 
 # Constants
 theta_B_C = [np.pi/4, 7*np.pi/4,]
 phi_B_C = [0, np.pi/3.5]
-r_C = [0,10] #TODO: change to 12 for next colelction
+r_C = [0,12] #TODO: change to 12 for next colelction
+r_c_mean = 9
+r_c_std = 5
 
 theta_B_F = [-np.pi/4, np.pi/4,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [4,8]
+r_F = [4,12]
 
 # # Ranges for Cartesian (not used)
 # F_range_x = [1, 10]
@@ -63,12 +65,15 @@ def create_C_F():
     Generate points C and F using spherical coordinates and store them in corresponding arrays.
     Store their connecting vectors CF.
     """
+
     C = []
     F = []
-    
+
     for _ in range(num_samples_C):
         # Generate random polar coordinates for C (mu=0, sigma=1)
-        r_c = np.random.uniform(r_C[0], r_C[1])
+        r_c = np.random.normal(r_c_mean, r_c_std)
+        while not r_C[0] <= r_c <= r_C[1]: #Trim to range r_C
+            r_c = np.random.normal(r_c_mean, r_c_std)
         theta_c = np.random.uniform(theta_B_C[0], theta_B_C[1])
         phi_c = np.random.uniform(phi_B_C[0], phi_B_C[1])
         C.append(spherical_to_cartesian(r_c, theta_c, phi_c))
