@@ -6,19 +6,19 @@ from scipy.linalg import expm
 
 np.random.seed(42)
 
-num_samples_C = 2000
-num_samples_F = 2000
+num_samples_C = 10000
+num_samples_F = 10000
 
 # Constants
 theta_B_C = [np.pi/3, 5*np.pi/3,]
 phi_B_C = [0, np.pi/3.5]
-r_C = [0,8]
+r_C = [0,15]
 r_c_mean = 6
 r_c_std = 5
 
 theta_B_F = [-np.pi/5, np.pi/5,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [4,7]
+r_F = [6,12]
 
 # # Ranges for Cartesian (not used)
 # F_range_x = [1, 10]
@@ -111,13 +111,14 @@ def to_rotation_matrix(quaternion):
     rotation = Rotation.from_quat(quaternion)
     return rotation.as_matrix()
 
-def get_R(C,F,CF):
+def get_R(CF):
     R_prime = np.eye(3)
     r1_prime = np.zeros((3,1))
     r2_prime = np.zeros((3,1))
     r3_prime = np.zeros((3,1))
+    e_1 = np.array([1,0,0])
     e_3 = np.array([0,0,1]) #only used to get r1_prime given LiDAR coordinate system
-    psi_range = [-np.pi/12, np.pi/12]
+    psi_range = [-np.pi/16, np.pi/16]
     R_for_C = [] # for each C, contains the corresponding R
 
     # First use CF to compute R'. Then use R' to compute R.
@@ -128,10 +129,10 @@ def get_R(C,F,CF):
         R_prime = np.column_stack((r1_prime, r2_prime, r3_prime))
 
         # Now compute R
-        # psi = np.random.uniform(psi_range[0],psi_range[1]) # range of psi to be selected randomly
-        psi = 0
-        r1_prime_hat = hat_map(r1_prime) #TODO: not using e3_hat?
-        exp_matrix = expm(psi*r1_prime_hat)
+        psi = np.random.uniform(psi_range[0],psi_range[1]) # range of psi to be selected randomly
+        # psi = 0
+        e1_prime_hat = hat_map(e_1)
+        exp_matrix = expm(psi*e1_prime_hat)
         # exp_matrix = np.eye(3) + np.sin(psi) * r1_prime_hat + (1 - np.cos(psi)) * np.dot(r1_prime_hat, r1_prime_hat) #explcitly use Rodrigues' formula
         R = np.dot(R_prime, exp_matrix)
 
@@ -150,7 +151,7 @@ def plot_points(C, F, CF, R_list):
     mesh.translate([0, 0, -0.5], inplace=True)  # Move the ship to -0.5 in the z-axis
     # Plot the points C blue and F red using pyvista
     plotter = pv.Plotter()
-    plotter.add_mesh(mesh, color='lightblue', opacity=0.5)
+    plotter.add_mesh(mesh, color='lightgrey', opacity=0.5)
 
     # add C, F points to the plot
     for i in range(num_samples_F):
@@ -188,7 +189,7 @@ def generate_scatter_data():
 
     print(f"Generated {len(C)} pairs of C and F points.")
     
-    R_list = get_R(C,F,CF)
+    R_list = get_R(CF)
     return C, F, CF, F_updated, R_list
 
 # 29.01.2025: Requires using base conda env on Jetson.

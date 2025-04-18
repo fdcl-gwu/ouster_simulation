@@ -100,7 +100,7 @@ Make sure you have the following software installed:
     ```
     - To check the settings before sampling, you can plot the points by runing ```$ python PoseScatterGenerator.py``` which also plotsa some generated CF vectors and poses.
     
-2. Run ```$ roslaunch ouster_description os1_world.launch -v``` to start the gazebo simulation (make sure to source the workspace).
+2. Run ```$ roslaunch ouster_description os1_world.launch -v``` to start the gazebo simulation (make sure to source the workspace (on orin nano, ```/home/fdcl/Ouster/gazebo_ws_fdcl```)).
     - NOTE: this won't work if the conda base env is active... must be using the /usr/bin/python for this to work.
 3. #### PoseServiceServer.py
     - Start the Server
