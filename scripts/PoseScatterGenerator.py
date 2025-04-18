@@ -6,19 +6,19 @@ from scipy.linalg import expm
 
 np.random.seed(42)
 
-num_samples_C = 1000
-num_samples_F = 1000
+num_samples_C = 2000
+num_samples_F = 2000
 
 # Constants
-theta_B_C = [np.pi/4, 7*np.pi/4,]
+theta_B_C = [np.pi/3, 5*np.pi/3,]
 phi_B_C = [0, np.pi/3.5]
-r_C = [0,12] #TODO: change to 12 for next colelction
-r_c_mean = 9
+r_C = [0,8]
+r_c_mean = 6
 r_c_std = 5
 
-theta_B_F = [-np.pi/4, np.pi/4,]
+theta_B_F = [-np.pi/5, np.pi/5,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [4,12]
+r_F = [4,7]
 
 # # Ranges for Cartesian (not used)
 # F_range_x = [1, 10]
@@ -42,7 +42,7 @@ def generate_CF_vectors(C, F):
     F_updated = []  # Track selected F points
 
     for i in range(len(C)):
-        F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 1.5, F[:, 2] <= C[i][2] + 1.5)]
+        F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 1.2, F[:, 2] <= C[i][2] + 1.2)]
         if len(F_filtered) == 0:
             print(f"Warning: No valid F found for C[{i}], using closest instead.")
             # Manually specify F points for now using the smallest absolute difference in z
@@ -117,7 +117,7 @@ def get_R(C,F,CF):
     r2_prime = np.zeros((3,1))
     r3_prime = np.zeros((3,1))
     e_3 = np.array([0,0,1]) #only used to get r1_prime given LiDAR coordinate system
-    psi_range = [-np.pi/6, np.pi/6]
+    psi_range = [-np.pi/12, np.pi/12]
     R_for_C = [] # for each C, contains the corresponding R
 
     # First use CF to compute R'. Then use R' to compute R.
@@ -131,8 +131,8 @@ def get_R(C,F,CF):
         # psi = np.random.uniform(psi_range[0],psi_range[1]) # range of psi to be selected randomly
         psi = 0
         r1_prime_hat = hat_map(r1_prime) #TODO: not using e3_hat?
-        # exp_matrix = expm(psi*r1_prime_hat)
-        exp_matrix = np.eye(3) + np.sin(psi) * r1_prime_hat + (1 - np.cos(psi)) * np.dot(r1_prime_hat, r1_prime_hat) #explcitly use Rodrigues' formula
+        exp_matrix = expm(psi*r1_prime_hat)
+        # exp_matrix = np.eye(3) + np.sin(psi) * r1_prime_hat + (1 - np.cos(psi)) * np.dot(r1_prime_hat, r1_prime_hat) #explcitly use Rodrigues' formula
         R = np.dot(R_prime, exp_matrix)
 
         # append R to a list
