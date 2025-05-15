@@ -8,12 +8,12 @@
   <link name="ship">
     <visual>
       <geometry>
-        <mesh filename="package://ouster_description/meshes/Ship_SOLID.stl" scale="1 1 1"/>
+        <mesh filename="package://ouster_description/meshes/sim-to-real/scaled_ShipBlenderCycles_final.stl" scale="1 1 1"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ouster_description/meshes/Ship_SOLID.stl" scale="1 1 1"/>
+        <mesh filename="package://ouster_description/meshes/sim-to-real/scaled_ShipBlenderCycles_final.stl" scale="1 1 1"/>
       </geometry>
     </collision>
     <inertial>

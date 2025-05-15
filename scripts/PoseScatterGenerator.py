@@ -12,13 +12,13 @@ num_samples_F = 10000
 # Constants
 theta_B_C = [np.pi/3, 5*np.pi/3,]
 phi_B_C = [0, np.pi/3.5]
-r_C = [0,15]
+r_C = [0,20]
 r_c_mean = 6
 r_c_std = 5
 
 theta_B_F = [-np.pi/5, np.pi/5,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [6,12]
+r_F = [8,17]
 
 # # Ranges for Cartesian (not used)
 # F_range_x = [1, 10]
@@ -69,14 +69,16 @@ def create_C_F():
     C = []
     F = []
 
-    for _ in range(num_samples_C):
-        # Generate random polar coordinates for C (mu=0, sigma=1)
+    while len(C) < num_samples_C:
         r_c = np.random.normal(r_c_mean, r_c_std)
-        while not r_C[0] <= r_c <= r_C[1]: #Trim to range r_C
-            r_c = np.random.normal(r_c_mean, r_c_std)
+        if not r_C[0] <= r_c <= r_C[1]:
+            continue
         theta_c = np.random.uniform(theta_B_C[0], theta_B_C[1])
         phi_c = np.random.uniform(phi_B_C[0], phi_B_C[1])
-        C.append(spherical_to_cartesian(r_c, theta_c, phi_c))
+        point = spherical_to_cartesian(r_c, theta_c, phi_c)
+        if point[2] >= 0.26:
+            C.append(point)
+
 
     for _ in range(num_samples_F):
         # Generate random polar coordinates for F (mu=0, sigma=1)
@@ -118,7 +120,7 @@ def get_R(CF):
     r3_prime = np.zeros((3,1))
     e_1 = np.array([1,0,0])
     e_3 = np.array([0,0,1]) #only used to get r1_prime given LiDAR coordinate system
-    psi_range = [-np.pi/16, np.pi/16]
+    psi_range = [-np.pi/18, np.pi/18]
     R_for_C = [] # for each C, contains the corresponding R
 
     # First use CF to compute R'. Then use R' to compute R.
@@ -148,7 +150,6 @@ def plot_points(C, F, CF, R_list):
     # Path to the STL file
     stl_path = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/ouster_description/meshes/rotated_ship.stl"
     mesh = pv.read(stl_path)
-    mesh.translate([0, 0, -0.5], inplace=True)  # Move the ship to -0.5 in the z-axis
     # Plot the points C blue and F red using pyvista
     plotter = pv.Plotter()
     plotter.add_mesh(mesh, color='lightgrey', opacity=0.5)
