@@ -8,3 +8,4 @@ install/
 doc/
 data/
 gazebo_pc_record*/
+pose_setter_output/

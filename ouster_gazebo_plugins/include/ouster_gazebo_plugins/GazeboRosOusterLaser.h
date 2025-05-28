@@ -64,6 +64,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
+#include <vector>
 
 #if GAZEBO_GPU_RAY
 #define GazeboRosOusterLaser GazeboRosOusterGpuLaser
@@ -139,6 +140,9 @@ namespace gazebo
     private: gazebo::transport::NodePtr gazebo_node_;
     private: gazebo::transport::SubscriberPtr sub_;
     private: void OnScan(const ConstLaserScanStampedPtr &_msg);
+
+    private: std::vector<double> custom_vert_angles_rad_;
+    private: std::vector<double> custom_azimuth_offsets_rad_;
 
   };
 

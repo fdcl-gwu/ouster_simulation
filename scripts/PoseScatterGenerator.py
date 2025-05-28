@@ -4,29 +4,21 @@ from scipy.spatial.transform import Rotation
 from scipy.linalg import expm
 
 
-np.random.seed(42)
+np.random.seed(41)
 
-num_samples_C = 10000
-num_samples_F = 10000
+num_samples_C = 20000
+num_samples_F =20000
 
 # Constants
-theta_B_C = [np.pi/3, 5*np.pi/3,]
-phi_B_C = [0, np.pi/3.5]
+theta_B_C = [np.pi/3.5, 6*np.pi/3.5]
+phi_B_C = [0, np.pi/2.5]
 r_C = [0,20]
 r_c_mean = 6
 r_c_std = 5
 
 theta_B_F = [-np.pi/5, np.pi/5,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [8,17]
-
-# # Ranges for Cartesian (not used)
-# F_range_x = [1, 10]
-# F_range_y = [-4.5, 4.5]
-# F_range_z = [-1, 4.4]
-# C_range_x = [-10,1]
-# C_range_y = [-12, 12]
-# C_range_z = [-0.5, 8] # NOTE: Sensor could be below ship with negative range and capture CAD gaps. Manually remove them if the selected C is within the ship.
+r_F = [0,17]
 
 def spherical_to_cartesian(r, theta, phi):
     """ Convert spherical (r, theta, phi) to Cartesian (x, y, z). """
@@ -37,28 +29,48 @@ def spherical_to_cartesian(r, theta, phi):
 
 # Generate vectors CF connecting C and F points. For each F point, there are two C points.
 # NOTE: Assumes there are twice as many C points as F points
-def generate_CF_vectors(C, F):
+def generate_CF_vectors(C, F, num_orientations=1):
     CF = []
-    F_updated = []  # Track selected F points
+    F_updated = []
+    C_repeated = []
 
     for i in range(len(C)):
-        F_filtered = F[np.logical_and(F[:, 2] >= C[i][2] - 1.2, F[:, 2] <= C[i][2] + 1.2)]
+        c_point = C[i]
+        z_min = c_point[2] - 1.2
+        z_max = c_point[2] + 1.2
+
+        # Check if special rule applies (based on C's x and y)
+        if (abs(c_point[1]) > 3) and (-3 < c_point[0] < 2):
+            # F near the origin in x, y, but within z bounds of current C
+            F_filtered = F[
+                (np.abs(F[:, 0] - 2.0) < 1.0) &  # x near 2
+                (np.abs(F[:, 1]) < 1.0) &        # y near 0
+                (F[:, 2] >= z_min) & (F[:, 2] <= z_max)
+            ]
+        else:
+            # Default filtering based on similar z
+            F_filtered = F[
+                (F[:, 2] >= z_min) & (F[:, 2] <= z_max)
+            ]
+
+        # Fallback if none found
         if len(F_filtered) == 0:
-            print(f"Warning: No valid F found for C[{i}], using closest instead.")
-            # Manually specify F points for now using the smallest absolute difference in z
-            F_selected = F[np.argmin(np.abs(F[:, 2] - C[i][2]))]
-            print(np.min(np.abs(F[:, 2] - C[i][2])))
-            F_updated.append(F_selected)  # Track F_selected for plotting
-            CF.append(F_selected - C[i])
+            F_selected = F[np.argmin(np.abs(F[:, 2] - c_point[2]))]
+            for _ in range(num_orientations):
+                CF.append(F_selected - c_point)
+                F_updated.append(F_selected)
+                C_repeated.append(c_point)
             continue
-        F_selected = F_filtered[np.random.randint(0, len(F_filtered))]
-        F_updated.append(F_selected)  # Track F_selected for plotting
 
-        CF.append(F_selected - C[i])
+        # Sample orientations
+        for _ in range(num_orientations):
+            F_selected = F_filtered[np.random.randint(0, len(F_filtered))]
+            CF.append(F_selected - c_point)
+            F_updated.append(F_selected)
+            C_repeated.append(c_point)
 
-    CF = np.array(CF)
-    F_updated = np.array(F_updated)  # Convert to NumPy for easy plotting
-    return CF, F_updated  # Return both CF and updated F points
+    return np.array(CF), np.array(F_updated), np.array(C_repeated)
+
 
 def create_C_F():
     """
@@ -69,6 +81,17 @@ def create_C_F():
     C = []
     F = []
 
+    # Sample first half of C in Cartesian box
+    while len(C) < num_samples_C/3:
+        x = np.random.uniform(-8, 2.3)
+        y = np.random.uniform(-10, 10)
+        z = np.random.uniform(0.26, 5)
+        point = np.array([x, y, z])
+
+        if point[2] >= 0.26:  # Keep this condition if needed
+            C.append(point)
+
+    # Sample other half of C in spherical coordinates
     while len(C) < num_samples_C:
         r_c = np.random.normal(r_c_mean, r_c_std)
         if not r_C[0] <= r_c <= r_C[1]:
@@ -78,7 +101,6 @@ def create_C_F():
         point = spherical_to_cartesian(r_c, theta_c, phi_c)
         if point[2] >= 0.26:
             C.append(point)
-
 
     for _ in range(num_samples_F):
         # Generate random polar coordinates for F (mu=0, sigma=1)
@@ -143,57 +165,50 @@ def get_R(CF):
 
     return R_for_C
     # TODO: plot the matrix in the plotter
-
 def plot_points(C, F, CF, R_list):
     import pyvista as pv
 
-    # Path to the STL file
     stl_path = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/ouster_description/meshes/rotated_ship.stl"
     mesh = pv.read(stl_path)
-    # Plot the points C blue and F red using pyvista
     plotter = pv.Plotter()
     plotter.add_mesh(mesh, color='lightgrey', opacity=0.5)
 
-    # add C, F points to the plot
-    for i in range(num_samples_F):
-        # plotter.add_points(C[2*i], color='blue', point_size=3)
-        plotter.add_points(C[i], color='blue', point_size=3)
-        plotter.add_points(F[i], color='red', point_size=3)
+    # Add all C and F points once as point clouds
+    plotter.add_points(C, color='blue', point_size=3, render_points_as_spheres=True)
+    plotter.add_points(F, color='red', point_size=3, render_points_as_spheres=True)
 
-    # select first num_lines pairs of points and draw lines between them
-    num_lines = 50
+    # Plot only a subset to avoid cluttering the view
+    num_lines = min(100, len(C))
     axes_length = 1.0
+
     for i in range(num_lines):
-        points = np.array([C[i], F_updated[i]])
-        plotter.add_lines(points, color='purple', width=2)
-    
-        # Draw a coordiante axes for each R at location C in the plotter    
+        plotter.add_lines(np.array([C[i], F[i]]), color='purple', width=2)
+
         R = R_list[i]
         origin = C[i]
-        plotter.add_arrows(origin, R[:, 0] * axes_length, color='red')    # X-axis
-        plotter.add_arrows(origin, R[:, 1] * axes_length, color='green')  # Y-axis
-        plotter.add_arrows(origin, R[:, 2] * axes_length, color='blue')   # Z-axis
+        plotter.add_arrows(origin, R[:, 0] * axes_length, color='red')    # X
+        plotter.add_arrows(origin, R[:, 1] * axes_length, color='green')  # Y
+        plotter.add_arrows(origin, R[:, 2] * axes_length, color='blue')   # Z
 
-    # Set labels and background
     plotter.set_background('white')
     plotter.add_axes(labels_off=False)
     plotter.show_grid()
-
-    # Show the plot
-    plotter.show(title='3D Visualization of PLY Point Cloud')
+    plotter.show(title='3D Visualization of 1 Orientations per C Point')
 
 
-def generate_scatter_data():
-    # Create a publisher to the /gazebo/set_model_state topic, sending over computed poses
+
+def generate_scatter_data(num_orientations=1):
     C, F = create_C_F()
-    CF, F_updated = generate_CF_vectors(C, F)
+    CF, F_updated, C_repeated = generate_CF_vectors(C, F, num_orientations=num_orientations)
 
-    print(f"Generated {len(C)} pairs of C and F points.")
-    
+    print(f"Generated {len(C_repeated)} pairs of C and F points.")
+
     R_list = get_R(CF)
-    return C, F, CF, F_updated, R_list
+    return C_repeated, F_updated, CF, R_list
+
 
 # 29.01.2025: Requires using base conda env on Jetson.
 if __name__ == "__main__":
-    C, F, CF, F_updated, R_list = generate_scatter_data()
+    C, F, CF, R_list = generate_scatter_data(num_orientations=1)
     plot_points(C, F, CF, R_list)
+

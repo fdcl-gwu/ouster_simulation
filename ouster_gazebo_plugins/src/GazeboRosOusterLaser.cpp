@@ -51,6 +51,8 @@
 #include <gazebo/transport/Node.hh>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <fstream>
+#include <jsoncpp/json/json.h>  // sudo apt install libjsoncpp-dev
 
 #include <tf/tf.h>
 
@@ -186,6 +188,33 @@ void GazeboRosOusterLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf
   // Start custom queue for laser
   callback_laser_queue_thread_ = boost::thread( boost::bind( &GazeboRosOusterLaser::laserQueueThread,this ) );
 
+  // Load custom vertical beam angles from JSON
+  std::string beam_file_path;
+  if (_sdf->HasElement("beam_intrinsics_path")) {
+    beam_file_path = _sdf->Get<std::string>("beam_intrinsics_path");
+    std::ifstream beam_file(beam_file_path);
+    if (beam_file) {
+      Json::Value root;
+      beam_file >> root;
+      // custom beam_altitude
+      const auto& angles_deg = root["beam_altitude_angles"];
+      for (int i = angles_deg.size() - 1; i >= 0; --i) {
+        custom_vert_angles_rad_.push_back(angles_deg[i].asDouble() * M_PI / 180.0);
+      }
+      // custom beam azimuth
+      const auto& azimuth_deg = root["beam_azimuth_angles"];
+      for (int i = azimuth_deg.size() - 1; i >= 0; --i) {
+        custom_azimuth_offsets_rad_.push_back(azimuth_deg[i].asDouble() * M_PI / 180.0);
+      }
+
+      ROS_INFO("Loaded %zu custom vertical beam angles from: %s", custom_vert_angles_rad_.size(), beam_file_path.c_str());
+    } else {
+      ROS_WARN("Failed to open beam_intrinsics file at %s", beam_file_path.c_str());
+    }
+  } else {
+    ROS_WARN("No <beam_intrinsics_path> provided, using uniform vertical angles.");
+  }
+
 #if GAZEBO_MAJOR_VERSION >= 7
   ROS_INFO("Ouster %slaser plugin ready, %i lasers", STR_GPU_, parent_ray_sensor_->VerticalRangeCount());
 #else
@@ -309,14 +338,22 @@ void GazeboRosOusterLaser::OnScan(ConstLaserScanStampedPtr& _msg)
       double yAngle;
       double pAngle;
 
+      double base_y_angle;
       if (rangeCount > 1) {
-        yAngle = i * yDiff / (rangeCount -1) + minAngle.Radian();
+        base_y_angle = i * yDiff / (rangeCount -1) + minAngle.Radian();
       } else {
-        yAngle = minAngle.Radian();
+        base_y_angle = minAngle.Radian();
+      }
+      if (custom_azimuth_offsets_rad_.size() == verticalRangeCount) {
+        yAngle = base_y_angle + custom_azimuth_offsets_rad_[j];
+      } else {
+      yAngle = base_y_angle;
       }
 
-      if (verticalRayCount > 1) {
-        pAngle = j * pDiff / (verticalRangeCount -1) + verticalMinAngle.Radian();
+      if (custom_vert_angles_rad_.size() == verticalRangeCount) {
+        pAngle = custom_vert_angles_rad_[j];
+      } else if (verticalRangeCount > 1) {
+      pAngle = j * pDiff / (verticalRangeCount -1) + verticalMinAngle.Radian();
       } else {
         pAngle = verticalMinAngle.Radian();
       }
