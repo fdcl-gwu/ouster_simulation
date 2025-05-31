@@ -36,6 +36,115 @@
     </inertial>
   </link>
 
+    <!-- Left UAV Leg -->
+  <link name="uav_leg_left">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.25" />
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.04" length="0.25" />
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="1e-5" ixy="0.0" ixz="0.0" iyy="1e-5" iyz="0.0" izz="1e-5"/>
+    </inertial>
+  </link>
+  <joint name="uav_leg_left_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="uav_leg_left"/>
+    <origin xyz="0 0.28 -0.04" rpy="0 0 0"/>
+  </joint>
+<link name="uav_leg_left_foot">
+  <visual>
+    <geometry>
+      <box size="0.4 0.1 0.03"/>  <!-- 0.4m wide in x, same thickness and height -->
+    </geometry>
+    <origin xyz="0 0 -0.06" rpy="0 0 0"/> <!-- Centered at bottom of leg -->
+    <material name="gray">
+      <color rgba="0.4 0.4 0.4 1.0"/>
+    </material>
+  </visual>
+  <collision>
+    <geometry>
+      <box size="0.4 0.1 0.03"/>
+    </geometry>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </collision>
+  <inertial>
+    <mass value="0.05"/>
+    <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+  </inertial>
+</link>
+<joint name="uav_leg_left_foot_joint" type="fixed">
+  <parent link="uav_leg_left"/>
+  <child link="uav_leg_left_foot"/>
+  <origin xyz="0 0 -0.06" rpy="0 0 0"/> <!-- Bottom of leg -->
+</joint>
+
+  <!-- Right UAV Leg -->
+  <link name="uav_leg_right">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.25" />
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.04" length="0.25" />
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="1e-5" ixy="0.0" ixz="0.0" iyy="1e-5" iyz="0.0" izz="1e-5"/>
+    </inertial>
+  </link>
+  <joint name="uav_leg_right_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="uav_leg_right"/>
+    <origin xyz="0 -0.28 -0.04" rpy="0 0 0"/>
+  </joint>
+  <link name="uav_leg_right_foot">
+  <visual>
+    <geometry>
+      <box size="0.4 0.1 0.03"/>
+    </geometry>
+    <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+    <material name="gray">
+      <color rgba="0.4 0.4 0.4 1.0"/>
+    </material>
+  </visual>
+  <collision>
+    <geometry>
+      <box size="0.4 0.1 0.03"/>
+    </geometry>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </collision>
+  <inertial>
+    <mass value="0.05"/>
+    <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+  </inertial>
+</link>
+<joint name="uav_leg_right_foot_joint" type="fixed">
+  <parent link="uav_leg_right"/>
+  <child link="uav_leg_right_foot"/>
+  <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+</joint>
+
+
   <xacro:include filename="$(find ouster_description)/urdf/OS1-64.urdf.xacro"/>
   <xacro:OS1-64 parent="base_link" name="os1_sensor">
     <origin xyz="0 0 0.05" rpy="0 0 0" />

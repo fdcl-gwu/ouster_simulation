@@ -4,21 +4,21 @@ from scipy.spatial.transform import Rotation
 from scipy.linalg import expm
 
 
-np.random.seed(41)
+np.random.seed(42)
 
-num_samples_C = 20000
-num_samples_F =20000
+num_samples_C = 4000
+num_samples_F = 4000
 
 # Constants
 theta_B_C = [np.pi/3.5, 6*np.pi/3.5]
-phi_B_C = [0, np.pi/2.5]
+phi_B_C = [0, np.pi/3]
 r_C = [0,20]
 r_c_mean = 6
 r_c_std = 5
 
 theta_B_F = [-np.pi/5, np.pi/5,]
 phi_B_F = [-np.pi/8, np.pi/3]
-r_F = [0,17]
+r_F = [2,17]
 
 def spherical_to_cartesian(r, theta, phi):
     """ Convert spherical (r, theta, phi) to Cartesian (x, y, z). """
@@ -30,30 +30,48 @@ def spherical_to_cartesian(r, theta, phi):
 # Generate vectors CF connecting C and F points. For each F point, there are two C points.
 # NOTE: Assumes there are twice as many C points as F points
 def generate_CF_vectors(C, F, num_orientations=1):
+    def elevation_angle(v):
+        return np.arcsin(v[2] / np.linalg.norm(v))
+
+    def filter_F_by_z(F_pool, z_center, z_margin=1.2):
+        return F_pool[(F_pool[:, 2] >= z_center - z_margin) & (F_pool[:, 2] <= z_center + z_margin)]
+
+    def sample_valid_direction(c_point, F_candidates, angle_threshold_rad):
+        for _ in range(100):
+            F_sample = F_candidates[np.random.randint(len(F_candidates))]
+            direction = F_sample - c_point
+            if abs(elevation_angle(direction)) <= angle_threshold_rad:
+                return direction, F_sample
+        return None, None
+
     CF = []
     F_updated = []
     C_repeated = []
 
-    for i in range(len(C)):
-        c_point = C[i]
-        z_min = c_point[2] - 1.2
-        z_max = c_point[2] + 1.2
+    angle_threshold_rad = np.deg2rad(15)
 
-        # Check if special rule applies (based on C's x and y)
-        if (abs(c_point[1]) > 3) and (-3 < c_point[0] < 2):
-            # F near the origin in x, y, but within z bounds of current C
-            F_filtered = F[
-                (np.abs(F[:, 0] - 2.0) < 1.0) &  # x near 2
-                (np.abs(F[:, 1]) < 1.0) &        # y near 0
-                (F[:, 2] >= z_min) & (F[:, 2] <= z_max)
+    for c_point in C:
+        use_origin_sampling = False
+
+        # Midship logic only if y is not near center
+        if -1 < c_point[0] < 10 and abs(c_point[1]) > 2:
+            use_origin_sampling = True
+
+        if use_origin_sampling:
+            # Use origin-near F
+            F_near_origin = F[
+                (F[:, 0] >= 2.0) & (F[:, 0] <= 3.0) &
+                (np.abs(F[:, 1]) < 1.0)
             ]
+            F_filtered = filter_F_by_z(F_near_origin, c_point[2])
+
+            if len(F_filtered) > 0:
+                test_dir = F_filtered[np.random.randint(len(F_filtered))] - c_point
+                if abs(elevation_angle(test_dir)) > angle_threshold_rad:
+                    F_filtered = filter_F_by_z(F, c_point[2])
         else:
-            # Default filtering based on similar z
-            F_filtered = F[
-                (F[:, 2] >= z_min) & (F[:, 2] <= z_max)
-            ]
+            F_filtered = filter_F_by_z(F, c_point[2])
 
-        # Fallback if none found
         if len(F_filtered) == 0:
             F_selected = F[np.argmin(np.abs(F[:, 2] - c_point[2]))]
             for _ in range(num_orientations):
@@ -62,14 +80,22 @@ def generate_CF_vectors(C, F, num_orientations=1):
                 C_repeated.append(c_point)
             continue
 
-        # Sample orientations
         for _ in range(num_orientations):
-            F_selected = F_filtered[np.random.randint(0, len(F_filtered))]
-            CF.append(F_selected - c_point)
-            F_updated.append(F_selected)
-            C_repeated.append(c_point)
+            direction, F_selected = sample_valid_direction(c_point, F_filtered, angle_threshold_rad)
+            if direction is not None:
+                CF.append(direction)
+                F_updated.append(F_selected)
+                C_repeated.append(c_point)
+            else:
+                # fallback even if steep
+                F_selected = F_filtered[0]
+                CF.append(F_selected - c_point)
+                F_updated.append(F_selected)
+                C_repeated.append(c_point)
 
     return np.array(CF), np.array(F_updated), np.array(C_repeated)
+
+
 
 
 def create_C_F():
@@ -82,14 +108,19 @@ def create_C_F():
     F = []
 
     # Sample first half of C in Cartesian box
-    while len(C) < num_samples_C/3:
-        x = np.random.uniform(-8, 2.3)
-        y = np.random.uniform(-10, 10)
-        z = np.random.uniform(0.26, 5)
-        point = np.array([x, y, z])
+    from scipy.stats import truncnorm
 
-        if point[2] >= 0.26:  # Keep this condition if needed
-            C.append(point)
+    def sample_truncated_normal(mean, std, lower, upper, size=1):
+        a, b = (lower - mean) / std, (upper - mean) / std
+        return truncnorm.rvs(a, b, loc=mean, scale=std, size=size)
+
+    while len(C) < num_samples_C / 4:
+        x = sample_truncated_normal(mean=0, std=3, lower=-7, upper=2.3)[0]
+        y = sample_truncated_normal(mean=0, std=3, lower=-7, upper=7)[0]
+        z = np.random.uniform(0.26, 6)
+        point = np.array([x, y, z])
+        C.append(point)
+
 
     # Sample other half of C in spherical coordinates
     while len(C) < num_samples_C:
@@ -142,7 +173,7 @@ def get_R(CF):
     r3_prime = np.zeros((3,1))
     e_1 = np.array([1,0,0])
     e_3 = np.array([0,0,1]) #only used to get r1_prime given LiDAR coordinate system
-    psi_range = [-np.pi/18, np.pi/18]
+    psi_range = [-np.pi/24, np.pi/24]
     R_for_C = [] # for each C, contains the corresponding R
 
     # First use CF to compute R'. Then use R' to compute R.
@@ -178,7 +209,7 @@ def plot_points(C, F, CF, R_list):
     plotter.add_points(F, color='red', point_size=3, render_points_as_spheres=True)
 
     # Plot only a subset to avoid cluttering the view
-    num_lines = min(100, len(C))
+    num_lines = min(200, len(C))
     axes_length = 1.0
 
     for i in range(num_lines):
@@ -200,6 +231,19 @@ def plot_points(C, F, CF, R_list):
 def generate_scatter_data(num_orientations=1):
     C, F = create_C_F()
     CF, F_updated, C_repeated = generate_CF_vectors(C, F, num_orientations=num_orientations)
+    def compute_elevation_angle(v):
+        """Returns elevation angle in degrees between vector and xy-plane."""
+        return np.degrees(np.arcsin(v[2] / np.linalg.norm(v)))
+
+    # Debugging: Count vectors with elevation > 15°
+    high_elevation_count = 0
+    for i in range(len(CF)):
+        elev = compute_elevation_angle(CF[i])
+        if abs(elev) > 15:
+            high_elevation_count += 1
+            print(f"CF[{i}] elevation = {elev:.2f} degrees (C: {C_repeated[i]}, F: {F_updated[i]})")
+
+    print(f"Total CF vectors with elevation > 15°: {high_elevation_count}/{len(CF)}")
 
     print(f"Generated {len(C_repeated)} pairs of C and F points.")
 

@@ -8,7 +8,7 @@ from datetime import datetime
 from std_srvs.srv import Trigger, TriggerResponse
 
 # Ensure the 'record' directory exists
-save_dir = "gazebo_pc_record_os0_rev06-32_r17_seed42_rc0-20r_Cmix_mu6_std5_thetaBC-L3R5ov3_thetaBF-ov5_rf0-17_phiBC0-ov2.5_phiBF-ov3_psi-ov18_box+rule_xy2_ygt3"
+save_dir = "gazebo_pc_record_os0_rev06-32_LEG+WATER"
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
     rospy.loginfo(f"Created directory: {save_dir}")

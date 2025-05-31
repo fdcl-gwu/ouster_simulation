@@ -9,6 +9,8 @@
   <arg name="world_name" default="$(find ouster_description)/worlds/os-1-64.world"/>
   <arg name="sensor_model" default="$(find ouster_description)/urdf/example.urdf.xacro"/>
   <arg name="ship_model" default="$(find ouster_description)/urdf/ship.urdf"/>
+  <arg name="rough_surface_model" default="$(find ouster_description)/urdf/rough_surface.urdf"/>
+
 
   <!-- Start gazebo and load the world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -28,6 +30,11 @@
   <!-- Spawn the ship model -->
   <param name="ship_description" command="$(find xacro)/xacro --inorder '$(arg ship_model)'" />
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_ship" output="screen" args="-urdf -param ship_description -model ship -x 0 -y 0 -z 0 -Y -1.5707"/>
+
+  <!-- Spawn the rough water surface -->
+  <param name="rough_surface_description" command="$(find xacro)/xacro --inorder '$(arg rough_surface_model)'" />
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_rough_surface" output="screen" args="-urdf -param rough_surface_description -model rough_surface -x -2.581240 -y 2.634395 -z -2.901699 -Y -1.583198"/>
+
 
   <!-- Robot State Publisher for sensor -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">

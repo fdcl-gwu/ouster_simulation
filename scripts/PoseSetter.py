@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     rospy.init_node('move_sensor_and_capture', anonymous=True)
 
-    base_position = (-1.6712, -4.7926, 2.7962)
-    base_quaternion = [0.02264919345024868, 0.07625865133688305, 0.5654648297221784, 0.8209270116640094]  # [x, y, z, w]
+    base_position = (-9.20267, 0.63117, 2.4078)
+    base_quaternion = [0.019810001616090093, 0.08713800710867532, 0.14420901176449955, 0.9855040803969334]  # [x, y, z, w]
     rpy_offset_deg = (0.0, 0, 0)
     translation_offset = (0, 0, 0.0)
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     
     
     # === Post-process most recent scan ===
-    gazebo_cloud_dir = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/gazebo_pc_record_os0_rev06-32_box_noise"
+    gazebo_cloud_dir = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/gazebo_pc_record_os0_rev06-32_r17_seed42_rc0-20r_Cmix_mu6_std5_thetaBC-L3R5ov3_thetaBF-ov5_rf0-17_phiBC0-ov2.5_phiBF-ov3_psi-ov18_box+rule_xy2_ygt3_LEGS"
     corrected_cloud_dir = "/home/fdcl/Ouster/gazebo_ws_fdcl/src/ouster_simulation/pose_setter_output"
 
     saved_files = sorted(glob(os.path.join(gazebo_cloud_dir, "*.ply")), key=os.path.getmtime)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         print("No .ply files found in Gazebo directory to correct.")
     else:
         latest_file = saved_files[-1]
-        corrected_file = os.path.join(corrected_cloud_dir, "000001.ply")  # Or dynamically rename if needed
+        corrected_file = os.path.join(corrected_cloud_dir, "000016.ply")  # Or dynamically rename if needed
 
         try:
             cloud = o3d.io.read_point_cloud(latest_file)
